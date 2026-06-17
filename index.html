@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Agents: A Deep Technical Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <a href="#hero" class="nav-logo">RAG Guide</a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">&#9776;</button>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#what-is-rag">What is RAG</a></li>
+    <li><a href="#rag-architecture">Architecture</a></li>
+    <li><a href="#rag-origins">Origins</a></li>
+    <li><a href="#rag-types">Types</a></li>
+    <li><a href="#naive-rag">Naive</a></li>
+    <li><a href="#advanced-rag">Advanced</a></li>
+    <li><a href="#modular-rag">Modular</a></li>
+    <li><a href="#agentic-rag">Agentic</a></li>
+    <li><a href="#graph-rag">Graph</a></li>
+    <li><a href="#multimodal-rag">Multimodal</a></li>
+    <li><a href="#compare">Compare</a></li>
+    <li><a href="#decision">Choose</a></li>
+  </ul>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1>RAG Agents: A Deep Technical Guide</h1>
+    <p class="hero-sub">How Retrieval-Augmented Generation works, its architectural variants, and where each excels in production.</p>
+    <div class="typewriter-wrap">
+      <span id="typewriter"></span><span class="typewriter-cursor"></span>
+    </div>
+  </div>
+  <div class="hero-scroll">Scroll to explore ↓</div>
+</section>
+<main class="container">
+
+<!-- ═══ WHAT IS RAG ═══ -->
+<article class="intro-block observe" id="what-is-rag">
+  <span class="rag-badge">Foundation</span>
+  <h2>What is Retrieval-Augmented Generation?</h2>
+  <p class="intro-lead"><strong>Retrieval-Augmented Generation (RAG)</strong> is a technique that grounds large language model outputs in external, verifiable knowledge. Instead of relying solely on what an LLM memorized during training, RAG retrieves relevant documents at query time and injects them into the prompt — so the model generates answers anchored in real data.</p>
+  <p class="intro-text">Pure LLMs suffer from three production-critical limitations: <em>knowledge cutoff</em> (they don't know events after training), <em>hallucination</em> (they confidently invent facts), and <em>no access to private data</em> (your internal docs, databases, and wikis never entered their weights). RAG solves all three by making retrieval a first-class step in the inference pipeline.</p>
+
+  <h3>The Core Formula</h3>
+  <div class="pillar-grid">
+    <div class="pillar">
+      <div class="pillar-num">Step 1</div>
+      <h4>Retrieve</h4>
+      <p>Search a knowledge base for passages most relevant to the user's question using semantic or hybrid search.</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">Step 2</div>
+      <h4>Augment</h4>
+      <p>Insert the retrieved passages into the LLM prompt as context, instructing the model to answer only from provided evidence.</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">Step 3</div>
+      <h4>Generate</h4>
+      <p>The LLM synthesizes a natural-language response grounded in the retrieved context — accurate, cited, and up-to-date.</p>
+    </div>
+  </div>
+
+  <div class="callout"><strong>Why it matters:</strong> RAG lets you update knowledge without retraining models, reduces hallucination by constraining generation to retrieved evidence, and makes AI systems auditable — every answer can be traced back to source documents.</div>
+</article>
+
+<!-- ═══ RAG ARCHITECTURE ═══ -->
+<article class="intro-block observe" id="rag-architecture">
+  <span class="rag-badge">Architecture</span>
+  <h2>How RAG Works — The Canonical Pipeline</h2>
+  <p class="intro-lead">Every RAG system — regardless of variant — follows a two-phase pattern: an <strong>offline indexing phase</strong> that prepares the knowledge base, and an <strong>online inference phase</strong> that retrieves and generates at query time.</p>
+
+  <p class="sub-label">End-to-End Architecture Flow</p>
+  <div class="flow-diagram" data-flow-id="canonical">
+    <svg viewBox="0 0 780 100" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="arr-canonical" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#8B90A8"/></marker></defs>
+      <text class="flow-label-muted" x="120" y="14" font-size="9">OFFLINE — Indexing</text>
+      <text class="flow-label-muted" x="520" y="14" font-size="9">ONLINE — Inference</text>
+      <line x1="300" y1="8" x2="300" y2="92" stroke="#B8BDD4" stroke-width="1" stroke-dasharray="4 3"/>
+      <g class="flow-step" data-step="0"><rect class="flow-node" x="8" y="28" width="56" height="36" rx="6"/><text class="flow-label" x="36" y="50">Docs</text></g>
+      <line class="flow-arrow" x1="64" y1="46" x2="80" y2="46" marker-end="url(#arr-canonical)"/>
+      <g class="flow-step" data-step="1"><rect class="flow-node" x="80" y="28" width="64" height="36" rx="6"/><text class="flow-label" x="112" y="50">Chunk</text></g>
+      <line class="flow-arrow" x1="144" y1="46" x2="160" y2="46" marker-end="url(#arr-canonical)"/>
+      <g class="flow-step" data-step="2"><rect class="flow-node" x="160" y="28" width="64" height="36" rx="6"/><text class="flow-label" x="192" y="50">Embed</text></g>
+      <line class="flow-arrow" x1="224" y1="46" x2="240" y2="46" marker-end="url(#arr-canonical)"/>
+      <g class="flow-step" data-step="3"><rect class="flow-node" x="240" y="28" width="52" height="36" rx="6"/><text class="flow-label" x="266" y="50">Index</text></g>
+      <g class="flow-step" data-step="4"><rect class="flow-node" x="320" y="28" width="60" height="36" rx="6"/><text class="flow-label" x="350" y="50">Query</text></g>
+      <line class="flow-arrow" x1="380" y1="46" x2="396" y2="46" marker-end="url(#arr-canonical)"/>
+      <g class="flow-step" data-step="5"><rect class="flow-node" x="396" y="28" width="72" height="36" rx="6"/><text class="flow-label" x="432" y="50">Retrieve</text></g>
+      <line class="flow-arrow" x1="468" y1="46" x2="484" y2="46" marker-end="url(#arr-canonical)"/>
+      <g class="flow-step" data-step="6"><rect class="flow-node" x="484" y="28" width="72" height="36" rx="6"/><text class="flow-label" x="520" y="50">Augment</text></g>
+      <line class="flow-arrow" x1="556" y1="46" x2="572" y2="46" marker-end="url(#arr-canonical)"/>
+      <g class="flow-step" data-step="7"><rect class="flow-node" x="572" y="28" width="52" height="36" rx="6"/><text class="flow-label" x="598" y="50">LLM</text></g>
+      <line class="flow-arrow" x1="624" y1="46" x2="640" y2="46" marker-end="url(#arr-canonical)"/>
+      <g class="flow-step" data-step="8"><rect class="flow-node" x="640" y="28" width="64" height="36" rx="6"/><text class="flow-label" x="672" y="50">Answer</text></g>
+    </svg>
+  </div>
+
+  <h3>Indexing Phase (Offline)</h3>
+  <p class="intro-text">Documents are split into chunks (typically 256–1024 tokens), converted to dense vector embeddings via models like OpenAI text-embedding-3 or BGE, and stored in a vector database (FAISS, Pinecone, Chroma). This happens once — or incrementally as docs change — and is the most expensive upfront step.</p>
+
+  <h3>Inference Phase (Online)</h3>
+  <p class="intro-text">When a user submits a query, it is embedded with the same model, compared against the index via approximate nearest-neighbor search, and the top-K most similar chunks are pulled. These chunks are concatenated into the prompt template, and the LLM generates a response constrained to that evidence.</p>
+
+  <div class="pillar-grid">
+    <div class="pillar">
+      <div class="pillar-num">Component</div>
+      <h4>Retriever</h4>
+      <p>Finds relevant knowledge — vector search, BM25, hybrid, or graph traversal depending on the RAG variant.</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">Component</div>
+      <h4>Augmenter</h4>
+      <p>Formats retrieved context into a prompt template with instructions, citations, and conversation history.</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">Component</div>
+      <h4>Generator</h4>
+      <p>The LLM that reads augmented context and produces the final natural-language answer.</p>
+    </div>
+  </div>
+</article>
+
+<!-- ═══ ORIGINS OF RAG ═══ -->
+<article class="intro-block observe" id="rag-origins">
+  <span class="rag-badge">History</span>
+  <h2>Where RAG Came From — Origins &amp; Evolution</h2>
+  <p class="intro-lead">RAG didn't appear in isolation. It emerged from a decade of research in open-domain question answering, dense retrieval, and the growing realization that scaling LLMs alone wouldn't solve the knowledge problem.</p>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-year">2017–2019 · Precursors</div>
+      <h4>Open-Domain QA &amp; Dense Retrieval</h4>
+      <p>Systems like DrQA and later <strong>Dense Passage Retrieval (DPR)</strong> by Facebook AI (2020) showed that neural retrievers could outperform BM25 keyword search. <strong>REALM</strong> (Google, 2020) pre-trained LLMs with a retrieval module baked into the architecture — proving retrieval + generation could be jointly learned.</p>
+    </div>
+    <div class="tl-item">
+      <div class="tl-year">May 2020 · The RAG Paper</div>
+      <h4>Lewis et al. — "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"</h4>
+      <p>Patrick Lewis and colleagues at <strong>Facebook AI Research (FAIR)</strong> published the foundational RAG paper at NeurIPS 2020. They coined the term, proposed two variants (RAG-Sequence and RAG-Token), and demonstrated that conditioning generation on retrieved Wikipedia passages dramatically improved performance on open-domain QA, fact verification, and Jeopardy question generation — without fine-tuning the LLM on domain data.</p>
+    </div>
+    <div class="tl-item">
+      <div class="tl-year">2021–2022 · Ecosystem Emergence</div>
+      <h4>From Research to Production Frameworks</h4>
+      <p>The release of GPT-3 and ChatGPT created massive demand for grounded AI. Frameworks like <strong>LangChain</strong> (Oct 2022) and <strong>LlamaIndex</strong> (2022) democratized RAG by packaging retrieval pipelines into composable abstractions. Vector databases (Pinecone, Weaviate, Chroma) became infrastructure staples.</p>
+    </div>
+    <div class="tl-item">
+      <div class="tl-year">2023 · The RAG Boom</div>
+      <h4>Enterprise Adoption &amp; Variant Explosion</h4>
+      <p>RAG became the default architecture for enterprise AI — every company wanted a "ChatGPT over our docs." Research accelerated: HyDE, self-RAG, FLARE, and reranking pipelines addressed retrieval quality. The community recognized that naive RAG was insufficient for production, spawning Advanced, Modular, and Agentic variants.</p>
+    </div>
+    <div class="tl-item">
+      <div class="tl-year">2024–2026 · Next Generation</div>
+      <h4>Graph RAG, Agentic RAG &amp; Multimodal RAG</h4>
+      <p>Microsoft's <strong>GraphRAG</strong> (2024) introduced knowledge-graph-based retrieval for holistic reasoning. Agentic patterns (ReAct, tool-calling agents) made retrieval dynamic and iterative. Multimodal RAG extended retrieval to images, charts, and tables via CLIP embeddings and vision LLMs — completing the evolution from a simple retrieve-and-stuff pipeline to a rich family of architectures.</p>
+    </div>
+  </div>
+
+  <div class="callout"><strong>Key insight:</strong> RAG succeeded because it separated <em>knowledge storage</em> from <em>reasoning</em>. The LLM handles language understanding and synthesis; the retrieval system handles facts. This decoupling is what makes RAG updatable, auditable, and deployable in production today.</div>
+</article>
+
+<!-- ═══ TYPES DIVIDER ═══ -->
+<div class="types-divider observe" id="rag-types">
+  <div class="divider-line"></div>
+  <h2>Types of RAG</h2>
+  <p>With the foundations covered, let's examine the six major architectural variants — each optimizing for different retrieval strategies, latency profiles, and production use cases.</p>
+</div>
+
+<!-- ═══ NAIVE RAG ═══ -->
+<article class="rag-card observe" id="naive-rag" data-flow="naive">
+  <span class="rag-badge">Type 01</span>
+  <h2>Naive RAG</h2>
+  <p class="concept">The baseline architecture: chunk documents, embed them, store in a vector database, retrieve top-K by cosine similarity, and stuff the results into the LLM prompt. Simple, fast, and the foundation every other variant builds upon.</p>
+
+  <p class="sub-label">Architecture Flow</p>
+  <div class="flow-diagram" data-flow-id="naive">
+    <svg viewBox="0 0 720 80" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="var(--muted)"/></marker></defs>
+      <g class="flow-step" data-step="0"><rect class="flow-node" x="4" y="20" width="72" height="40" rx="6"/><text class="flow-label" x="40" y="45">Query</text></g>
+      <line class="flow-arrow" data-arrow="0" x1="76" y1="40" x2="96" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="1"><rect class="flow-node" x="96" y="20" width="72" height="40" rx="6"/><text class="flow-label" x="132" y="45">Embed</text></g>
+      <line class="flow-arrow" data-arrow="1" x1="168" y1="40" x2="188" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="2"><rect class="flow-node" x="188" y="20" width="88" height="40" rx="6"/><text class="flow-label" x="232" y="45">Vector Search</text></g>
+      <line class="flow-arrow" data-arrow="2" x1="276" y1="40" x2="296" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="3"><rect class="flow-node" x="296" y="20" width="88" height="40" rx="6"/><text class="flow-label" x="340" y="45">Top-K Chunks</text></g>
+      <line class="flow-arrow" data-arrow="3" x1="384" y1="40" x2="404" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="4"><rect class="flow-node" x="404" y="20" width="72" height="40" rx="6"/><text class="flow-label" x="440" y="45">Prompt</text></g>
+      <line class="flow-arrow" data-arrow="4" x1="476" y1="40" x2="496" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="5"><rect class="flow-node" x="496" y="20" width="56" height="40" rx="6"/><text class="flow-label" x="524" y="45">LLM</text></g>
+      <line class="flow-arrow" data-arrow="5" x1="552" y1="40" x2="572" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="6"><rect class="flow-node lit-warm" x="572" y="20" width="72" height="40" rx="6"/><text class="flow-label" x="608" y="45">Answer</text></g>
+    </svg>
+  </div>
+
+  <p class="sub-label">How It Works</p>
+  <div class="stepper">
+    <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Chunk &amp; Embed Documents</h4><p>Split corpus into fixed-size chunks (512–1024 tokens), embed each with a text embedding model.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Store in Vector DB</h4><p>Persist embeddings in FAISS, Pinecone, or similar for fast approximate nearest-neighbor search.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Query &amp; Retrieve</h4><p>Embed the user query, compute cosine similarity, return top-K most similar chunks.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Prompt &amp; Generate</h4><p>Concatenate retrieved chunks into the system/user prompt and call the LLM for a grounded answer.</p></div></div>
+  </div>
+
+  <p class="sub-label">Key Components</p>
+  <div class="components">
+    <div class="comp-card"><div class="comp-icon">📄</div><h4>Text Splitter</h4><p>RecursiveCharacterTextSplitter or semantic chunking to break docs into retrievable units.</p></div>
+    <div class="comp-card"><div class="comp-icon">🔢</div><h4>Embedding Model</h4><p>text-embedding-3-small, BGE, or E5 — converts text to dense vectors.</p></div>
+    <div class="comp-card"><div class="comp-icon">🗄️</div><h4>Vector Store</h4><p>FAISS, Chroma, Pinecone — stores and indexes embeddings for similarity search.</p></div>
+    <div class="comp-card"><div class="comp-icon">🤖</div><h4>LLM Generator</h4><p>GPT-4, Claude, Llama — synthesizes final answer from retrieved context.</p></div>
+  </div>
+
+  <p class="sub-label">Strengths &amp; Limitations</p>
+  <div class="pros-cons">
+    <div class="pros"><h4>Strengths</h4><ul><li>Simple to implement and debug</li><li>Low latency — single retrieval pass</li><li>Works well for FAQ-style Q&amp;A</li><li>Minimal infrastructure requirements</li></ul></div>
+    <div class="cons"><h4>Limitations</h4><ul><li>No query understanding or rewriting</li><li>Retrieval quality depends entirely on chunking</li><li>No re-ranking — noisy context pollutes prompts</li><li>Cannot handle multi-hop reasoning</li></ul></div>
+  </div>
+
+  <div class="use-case">
+    <h4>Practical Use Case</h4>
+    <div class="industry">SaaS · Internal Support FAQ Bot</div>
+    <p><strong>Problem:</strong> Support team answers the same questions repeatedly — "How do I reset 2FA?", "Where's my invoice?" — buried across 200+ help articles.</p>
+    <p><strong>Solution:</strong> Naive RAG indexes all support docs. User asks "How do I reset 2FA?" → system retrieves top 3 relevant chunks → LLM generates a precise, cited answer in seconds.</p>
+<pre><span class="t-kw">from</span> <span class="t-var">langchain.vectorstores</span> <span class="t-kw">import</span> <span class="t-cls">FAISS</span>
+<span class="t-kw">from</span> <span class="t-var">langchain.embeddings</span> <span class="t-kw">import</span> <span class="t-cls">OpenAIEmbeddings</span>
+<span class="t-kw">from</span> <span class="t-var">langchain.chains</span> <span class="t-kw">import</span> <span class="t-cls">RetrievalQA</span>
+
+<span class="t-var">vectorstore</span> <span class="t-op">=</span> <span class="t-cls">FAISS</span><span class="t-op">.</span><span class="t-fn">load_local</span><span class="t-op">(</span><span class="t-str">"support_docs"</span><span class="t-op">,</span> <span class="t-cls">OpenAIEmbeddings</span><span class="t-op">())</span>
+<span class="t-var">qa_chain</span> <span class="t-op">=</span> <span class="t-cls">RetrievalQA</span><span class="t-op">.</span><span class="t-fn">from_chain_type</span><span class="t-op">(</span>
+    <span class="t-var">llm</span><span class="t-op">=</span><span class="t-cls">ChatOpenAI</span><span class="t-op">(</span><span class="t-var">model</span><span class="t-op">=</span><span class="t-str">"gpt-4o"</span><span class="t-op">),</span>
+    <span class="t-var">retriever</span><span class="t-op">=</span><span class="t-var">vectorstore</span><span class="t-op">.</span><span class="t-fn">as_retriever</span><span class="t-op">(</span><span class="t-var">search_kwargs</span><span class="t-op">={</span><span class="t-str">"k"</span><span class="t-op">:</span> <span class="t-num">3</span><span class="t-op">})</span>
+<span class="t-op">)</span>
+<span class="t-var">answer</span> <span class="t-op">=</span> <span class="t-var">qa_chain</span><span class="t-op">.</span><span class="t-fn">invoke</span><span class="t-op">(</span><span class="t-str">"How do I reset 2FA?"</span><span class="t-op">)</span></pre>
+  </div>
+
+  <div class="callout"><strong>When to use:</strong> Start here for internal knowledge bases, FAQ bots, and documentation search where speed matters more than precision and your corpus is well-structured text.</div>
+</article>
+
+<!-- ═══ ADVANCED RAG ═══ -->
+<article class="rag-card observe" id="advanced-rag" data-flow="advanced">
+  <span class="rag-badge">Type 02</span>
+  <h2>Advanced RAG</h2>
+  <p class="concept">Enhances the naive pipeline with pre-retrieval optimizations (query rewriting, HyDE) and post-retrieval refinement (re-ranking, context compression). The goal is higher precision without sacrificing too much latency.</p>
+
+  <p class="sub-label">Architecture Flow</p>
+  <div class="flow-diagram" data-flow-id="advanced">
+    <svg viewBox="0 0 820 80" xmlns="http://www.w3.org/2000/svg">
+      <g class="flow-step" data-step="0"><rect class="flow-node" x="4" y="20" width="64" height="40" rx="6"/><text class="flow-label" x="36" y="45">Query</text></g>
+      <line class="flow-arrow" data-arrow="0" x1="68" y1="40" x2="84" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="1"><rect class="flow-node" x="84" y="20" width="72" height="40" rx="6"/><text class="flow-label" x="120" y="45">Rewrite</text></g>
+      <line class="flow-arrow" data-arrow="1" x1="156" y1="40" x2="172" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="2"><rect class="flow-node" x="172" y="20" width="64" height="40" rx="6"/><text class="flow-label" x="204" y="45">Embed</text></g>
+      <line class="flow-arrow" data-arrow="2" x1="236" y1="40" x2="252" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="3"><rect class="flow-node" x="252" y="20" width="88" height="40" rx="6"/><text class="flow-label" x="296" y="45">Vector Search</text></g>
+      <line class="flow-arrow" data-arrow="3" x1="340" y1="40" x2="356" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="4"><rect class="flow-node" x="356" y="20" width="72" height="40" rx="6"/><text class="flow-label" x="392" y="45">Re-rank</text></g>
+      <line class="flow-arrow" data-arrow="4" x1="428" y1="40" x2="444" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="5"><rect class="flow-node" x="444" y="20" width="80" height="40" rx="6"/><text class="flow-label" x="484" y="45">Compress</text></g>
+      <line class="flow-arrow" data-arrow="5" x1="524" y1="40" x2="540" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="6"><rect class="flow-node" x="540" y="20" width="64" height="40" rx="6"/><text class="flow-label" x="572" y="45">Prompt</text></g>
+      <line class="flow-arrow" data-arrow="6" x1="604" y1="40" x2="620" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="7"><rect class="flow-node" x="620" y="20" width="52" height="40" rx="6"/><text class="flow-label" x="646" y="45">LLM</text></g>
+      <line class="flow-arrow" data-arrow="7" x1="672" y1="40" x2="688" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="8"><rect class="flow-node" x="688" y="20" width="64" height="40" rx="6"/><text class="flow-label" x="720" y="45">Answer</text></g>
+    </svg>
+  </div>
+
+  <p class="sub-label">How It Works</p>
+  <div class="stepper">
+    <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Query Transformation</h4><p>Rewrite, expand, or decompose the query using HyDE (generate a hypothetical answer, embed that) or multi-query expansion.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Hybrid Retrieval</h4><p>Combine dense vector search with sparse BM25 for broader recall across lexical and semantic matches.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Cross-Encoder Re-ranking</h4><p>Score top-20 candidates with a cross-encoder (Cohere Rerank, BGE-reranker) to select the best 3–5.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Context Compression</h4><p>Strip irrelevant sentences from retrieved chunks before stuffing into the prompt to reduce noise and token cost.</p></div></div>
+  </div>
+
+  <p class="sub-label">Key Components</p>
+  <div class="components">
+    <div class="comp-card"><div class="comp-icon">✏️</div><h4>Query Rewriter</h4><p>HyDE, step-back prompting, or multi-query generation to improve retrieval recall.</p></div>
+    <div class="comp-card"><div class="comp-icon">⚖️</div><h4>Hybrid Retriever</h4><p>Ensemble of BM25 + vector search with reciprocal rank fusion.</p></div>
+    <div class="comp-card"><div class="comp-icon">🎯</div><h4>Cross-Encoder</h4><p>Cohere Rerank or BGE-reranker for precise relevance scoring.</p></div>
+    <div class="comp-card"><div class="comp-icon">🗜️</div><h4>Context Compressor</h4><p>LLMLingua or extractive summarization to trim noisy context.</p></div>
+  </div>
+
+  <p class="sub-label">Strengths &amp; Limitations</p>
+  <div class="pros-cons">
+    <div class="pros"><h4>Strengths</h4><ul><li>Significantly higher retrieval precision</li><li>Handles ambiguous or terse queries well</li><li>Reduces hallucination via better context</li><li>Hybrid search catches lexical + semantic matches</li></ul></div>
+    <div class="cons"><h4>Limitations</h4><ul><li>Higher latency from extra pipeline stages</li><li>More components to tune and maintain</li><li>Re-ranker adds cost per query</li><li>Still single-pass — no iterative reasoning</li></ul></div>
+  </div>
+
+  <div class="use-case">
+    <h4>Practical Use Case</h4>
+    <div class="industry">Legal · Contract Clause Q&amp;A</div>
+    <p><strong>Problem:</strong> Lawyers need precise answers from 10,000+ page contract libraries. A query like "contract termination clause" is ambiguous and returns noisy results with naive retrieval.</p>
+    <p><strong>Solution:</strong> HyDE expands the query into a hypothetical clause paragraph. Hybrid BM25+vector retrieves broadly. Cross-encoder re-ranks top 20 down to top 3 with high precision.</p>
+<pre><span class="t-kw">from</span> <span class="t-var">langchain.retrievers</span> <span class="t-kw">import</span> <span class="t-cls">ContextualCompressionRetriever</span>
+<span class="t-kw">from</span> <span class="t-var">langchain.retrievers.document_compressors</span> <span class="t-kw">import</span> <span class="t-cls">CohereRerank</span>
+
+<span class="t-cm"># HyDE: generate hypothetical doc, embed it for retrieval</span>
+<span class="t-var">hyde_retriever</span> <span class="t-op">=</span> <span class="t-cls">HyDERetriever</span><span class="t-op">(</span><span class="t-var">base_retriever</span><span class="t-op">=</span><span class="t-var">hybrid_retriever</span><span class="t-op">)</span>
+<span class="t-var">compressor</span> <span class="t-op">=</span> <span class="t-cls">CohereRerank</span><span class="t-op">(</span><span class="t-var">model</span><span class="t-op">=</span><span class="t-str">"rerank-english-v3.0"</span><span class="t-op">,</span> <span class="t-var">top_n</span><span class="t-op">=</span><span class="t-num">3</span><span class="t-op">)</span>
+<span class="t-var">retriever</span> <span class="t-op">=</span> <span class="t-cls">ContextualCompressionRetriever</span><span class="t-op">(</span>
+    <span class="t-var">base_compressor</span><span class="t-op">=</span><span class="t-var">compressor</span><span class="t-op">,</span> <span class="t-var">base_retriever</span><span class="t-op">=</span><span class="t-var">hyde_retriever</span>
+<span class="t-op">)</span>
+<span class="t-var">docs</span> <span class="t-op">=</span> <span class="t-var">retriever</span><span class="t-op">.</span><span class="t-fn">invoke</span><span class="t-op">(</span><span class="t-str">"contract termination clause"</span><span class="t-op">)</span></pre>
+  </div>
+
+  <div class="callout"><strong>When to use:</strong> Choose Advanced RAG when precision is critical — legal, medical, financial domains — and you can afford 2–3× the latency of naive RAG for significantly better answer quality.</div>
+</article>
+
+<!-- ═══ MODULAR RAG ═══ -->
+<article class="rag-card observe" id="modular-rag" data-flow="modular">
+  <span class="rag-badge">Type 03</span>
+  <h2>Modular RAG</h2>
+  <p class="concept">Treats the RAG pipeline as composable, swappable modules — retrievers, rankers, generators, routers, and fusion layers can be mixed and matched. A query router directs traffic to the right data source, and a fusion module merges heterogeneous results.</p>
+
+  <p class="sub-label">Architecture Flow</p>
+  <div class="flow-diagram" data-flow-id="modular">
+    <svg viewBox="0 0 720 120" xmlns="http://www.w3.org/2000/svg">
+      <g class="flow-step" data-step="0"><rect class="flow-node" x="4" y="40" width="64" height="40" rx="6"/><text class="flow-label" x="36" y="65">Query</text></g>
+      <line class="flow-arrow" data-arrow="0" x1="68" y1="60" x2="88" y2="60" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="1"><rect class="flow-node" x="88" y="40" width="64" height="40" rx="6"/><text class="flow-label" x="120" y="65">Router</text></g>
+      <line class="flow-arrow" data-arrow="1" x1="120" y1="40" x2="200" y2="16" marker-end="url(#arr)"/>
+      <line class="flow-arrow" data-arrow="2" x1="120" y1="60" x2="200" y2="60" marker-end="url(#arr)"/>
+      <line class="flow-arrow" data-arrow="3" x1="120" y1="80" x2="200" y2="104" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="2"><rect class="flow-node" x="200" y="0" width="88" height="32" rx="6"/><text class="flow-label" x="244" y="20">Web Search</text></g>
+      <g class="flow-step" data-step="3"><rect class="flow-node" x="200" y="44" width="88" height="32" rx="6"/><text class="flow-label" x="244" y="64">Vector DB</text></g>
+      <g class="flow-step" data-step="4"><rect class="flow-node" x="200" y="88" width="88" height="32" rx="6"/><text class="flow-label" x="244" y="108">SQL DB</text></g>
+      <line class="flow-arrow" data-arrow="4" x1="288" y1="16" x2="340" y2="50" marker-end="url(#arr)"/>
+      <line class="flow-arrow" data-arrow="5" x1="288" y1="60" x2="340" y2="60" marker-end="url(#arr)"/>
+      <line class="flow-arrow" data-arrow="6" x1="288" y1="104" x2="340" y2="70" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="5"><rect class="flow-node" x="340" y="40" width="72" height="40" rx="6"/><text class="flow-label" x="376" y="65">Fusion</text></g>
+      <line class="flow-arrow" data-arrow="7" x1="412" y1="60" x2="432" y2="60" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="6"><rect class="flow-node" x="432" y="40" width="64" height="40" rx="6"/><text class="flow-label" x="464" y="65">Prompt</text></g>
+      <line class="flow-arrow" data-arrow="8" x1="496" y1="60" x2="516" y2="60" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="7"><rect class="flow-node" x="516" y="40" width="52" height="40" rx="6"/><text class="flow-label" x="542" y="65">LLM</text></g>
+      <line class="flow-arrow" data-arrow="9" x1="568" y1="60" x2="588" y2="60" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="8"><rect class="flow-node" x="588" y="40" width="72" height="40" rx="6"/><text class="flow-label" x="624" y="65">Answer</text></g>
+    </svg>
+  </div>
+
+  <p class="sub-label">How It Works</p>
+  <div class="stepper">
+    <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Query Routing</h4><p>A classifier or LLM router inspects the query and selects which retrieval module(s) to invoke — vector DB, SQL, web search, or API.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Parallel Retrieval</h4><p>Selected modules retrieve in parallel from their respective data sources with module-specific strategies.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Result Fusion</h4><p>Reciprocal Rank Fusion (RRF) or LLM-based fusion merges heterogeneous results into a unified context.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Generation</h4><p>The fused context is passed to the LLM, which may also access memory modules for conversation history.</p></div></div>
+  </div>
+
+  <p class="sub-label">Key Components</p>
+  <div class="components">
+    <div class="comp-card"><div class="comp-icon">🔀</div><h4>Query Router</h4><p>LLM or classifier that directs queries to the appropriate retrieval backend.</p></div>
+    <div class="comp-card"><div class="comp-icon">🧩</div><h4>Retriever Modules</h4><p>Pluggable retrievers: vector, SQL, web, API — each independently swappable.</p></div>
+    <div class="comp-card"><div class="comp-icon">🔗</div><h4>Fusion Layer</h4><p>RRF or weighted fusion to merge results from multiple sources.</p></div>
+    <div class="comp-card"><div class="comp-icon">🧠</div><h4>Memory Module</h4><p>Conversation buffer or summary memory for multi-turn context.</p></div>
+  </div>
+
+  <p class="sub-label">Strengths &amp; Limitations</p>
+  <div class="pros-cons">
+    <div class="pros"><h4>Strengths</h4><ul><li>Highly flexible — swap modules without rewriting pipeline</li><li>Handles heterogeneous enterprise data sources</li><li>Router optimizes retrieval per query type</li><li>Scales to complex org knowledge architectures</li></ul></div>
+    <div class="cons"><h4>Limitations</h4><ul><li>Router accuracy is a single point of failure</li><li>Complex orchestration and debugging</li><li>Fusion quality varies across source types</li><li>Higher engineering overhead to maintain</li></ul></div>
+  </div>
+
+  <div class="use-case">
+    <h4>Practical Use Case</h4>
+    <div class="industry">Enterprise · Unified Knowledge Assistant</div>
+    <p><strong>Problem:</strong> A large enterprise has HR data in SQL, product docs in a vector store, and market intel on the web. Employees need one assistant that knows where to look.</p>
+    <p><strong>Solution:</strong> Modular RAG routes "What's my PTO balance?" to SQL, "How do I configure SSO?" to vector store, and "What's our competitor's latest pricing?" to web search — then fuses and generates.</p>
+<pre><span class="t-kw">from</span> <span class="t-var">langgraph.graph</span> <span class="t-kw">import</span> <span class="t-cls">StateGraph</span>
+
+<span class="t-kw">def</span> <span class="t-fn">route_query</span><span class="t-op">(</span><span class="t-var">state</span><span class="t-op">):</span>
+    <span class="t-var">intent</span> <span class="t-op">=</span> <span class="t-var">classifier</span><span class="t-op">.</span><span class="t-fn">invoke</span><span class="t-op">(</span><span class="t-var">state</span><span class="t-op">[</span><span class="t-str">"query"</span><span class="t-op">])</span>
+    <span class="t-kw">return</span> <span class="t-op">{</span><span class="t-str">"hr"</span><span class="t-op">:</span> <span class="t-str">"sql_retriever"</span><span class="t-op">,</span> <span class="t-str">"product"</span><span class="t-op">:</span> <span class="t-str">"vector_retriever"</span><span class="t-op">,</span>
+            <span class="t-str">"market"</span><span class="t-op">:</span> <span class="t-str">"web_search"</span><span class="t-op">}.</span><span class="t-fn">get</span><span class="t-op">(</span><span class="t-var">intent</span><span class="t-op">,</span> <span class="t-str">"vector_retriever"</span><span class="t-op">)</span>
+
+<span class="t-var">graph</span> <span class="t-op">=</span> <span class="t-cls">StateGraph</span><span class="t-op">(</span><span class="t-cls">AgentState</span><span class="t-op">)</span>
+<span class="t-var">graph</span><span class="t-op">.</span><span class="t-fn">add_conditional_edges</span><span class="t-op">(</span><span class="t-str">"router"</span><span class="t-op">,</span> <span class="t-var">route_query</span><span class="t-op">)</span>
+<span class="t-var">graph</span><span class="t-op">.</span><span class="t-fn">add_edge</span><span class="t-op">(</span><span class="t-str">"fusion"</span><span class="t-op">,</span> <span class="t-str">"generate"</span><span class="t-op">)</span></pre>
+  </div>
+
+  <div class="callout"><strong>When to use:</strong> Build Modular RAG when your organization has multiple data silos (SQL, docs, APIs, web) and you need a single assistant that intelligently routes to the right source.</div>
+</article>
+
+<!-- ═══ AGENTIC RAG ═══ -->
+<article class="rag-card observe" id="agentic-rag" data-flow="agentic">
+  <span class="rag-badge">Type 04</span>
+  <h2>Agentic RAG</h2>
+  <p class="concept">The LLM acts as an autonomous agent that decides when to retrieve, what to retrieve, and whether the answer is good enough. It can decompose complex queries, iterate through retrieve-reason-verify loops, and self-correct when quality is low.</p>
+
+  <p class="sub-label">Architecture Flow</p>
+  <div class="flow-diagram" data-flow-id="agentic">
+    <svg viewBox="0 0 640 130" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr-agentic" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6" fill="#8B90A8"/>
+        </marker>
+        <marker id="arr-agentic-lit" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6" fill="#5B52E8"/>
+        </marker>
+      </defs>
+      <!-- Query -->
+      <g class="flow-step" data-step="0">
+        <rect class="flow-node" x="8" y="45" width="68" height="40" rx="6"/>
+        <text class="flow-label" x="42" y="70">Query</text>
+      </g>
+      <line class="flow-arrow" data-arrow="0" x1="76" y1="65" x2="94" y2="65" marker-end="url(#arr-agentic)"/>
+      <!-- Agent Plan -->
+      <g class="flow-step" data-step="1">
+        <rect class="flow-node" x="94" y="45" width="88" height="40" rx="6"/>
+        <text class="flow-label" x="138" y="70">Agent Plan</text>
+      </g>
+      <line class="flow-arrow" data-arrow="1" x1="182" y1="65" x2="200" y2="65" marker-end="url(#arr-agentic)"/>
+      <!-- Loop container -->
+      <rect class="flow-loop-box" data-loop-box="1" x="200" y="16" width="132" height="100" rx="8"/>
+      <!-- Retrieve -->
+      <g class="flow-step" data-step="2">
+        <rect class="flow-node" x="216" y="24" width="100" height="28" rx="5"/>
+        <text class="flow-label" x="266" y="42">Retrieve</text>
+      </g>
+      <!-- Reason -->
+      <g class="flow-step" data-step="3">
+        <rect class="flow-node" x="216" y="58" width="100" height="28" rx="5"/>
+        <text class="flow-label" x="266" y="76">Reason</text>
+      </g>
+      <!-- Verify -->
+      <g class="flow-step" data-step="4">
+        <rect class="flow-node" x="216" y="92" width="100" height="28" rx="5"/>
+        <text class="flow-label" x="266" y="110">Verify</text>
+      </g>
+      <!-- Internal loop arrow (Verify → Retrieve) -->
+      <path class="flow-arrow" data-arrow="2" d="M 316 106 C 348 106, 348 38, 316 38" fill="none" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arr-agentic)"/>
+      <text class="flow-label-muted" x="358" y="72">loop</text>
+      <!-- Exit to Final Answer -->
+      <line class="flow-arrow" data-arrow="3" x1="332" y1="65" x2="400" y2="65" marker-end="url(#arr-agentic)"/>
+      <!-- Final Answer -->
+      <g class="flow-step" data-step="5">
+        <rect class="flow-node" x="400" y="45" width="100" height="40" rx="6"/>
+        <text class="flow-label" x="450" y="70">Final Answer</text>
+      </g>
+    </svg>
+  </div>
+
+  <p class="sub-label">How It Works</p>
+  <div class="stepper">
+    <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Query Decomposition</h4><p>Agent breaks complex questions into sub-queries, each targeting a specific information need.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Iterative Retrieval</h4><p>Agent calls retrieval tools as needed — not a fixed top-K, but dynamic based on what's missing from context.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Reasoning &amp; Synthesis</h4><p>ReAct-style thought-action-observation loop: reason about retrieved docs, identify gaps, retrieve more.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Self-Verification</h4><p>Agent critiques its draft answer against sources. If confidence is low, it re-retrieves and revises.</p></div></div>
+  </div>
+
+  <p class="sub-label">Key Components</p>
+  <div class="components">
+    <div class="comp-card"><div class="comp-icon">🧭</div><h4>Planning Module</h4><p>Decomposes queries and creates a retrieval strategy before execution.</p></div>
+    <div class="comp-card"><div class="comp-icon">🔧</div><h4>Retrieval Tools</h4><p>Search, browse, SQL query — exposed as callable tools the agent invokes.</p></div>
+    <div class="comp-card"><div class="comp-icon">🔄</div><h4>ReAct Loop</h4><p>Thought → Action → Observation cycle for multi-step reasoning.</p></div>
+    <div class="comp-card"><div class="comp-icon">✅</div><h4>Self-Critique</h4><p>Quality checker that triggers re-retrieval when answer confidence is low.</p></div>
+  </div>
+
+  <p class="sub-label">Strengths &amp; Limitations</p>
+  <div class="pros-cons">
+    <div class="pros"><h4>Strengths</h4><ul><li>Handles complex, multi-part research questions</li><li>Self-corrects retrieval gaps dynamically</li><li>Can cross-check multiple sources</li><li>Adapts retrieval depth to query complexity</li></ul></div>
+    <div class="cons"><h4>Limitations</h4><ul><li>High latency — multiple LLM + retrieval calls</li><li>Expensive — token costs scale with iterations</li><li>Non-deterministic — hard to reproduce exactly</li><li>Agent loops can run away without guardrails</li></ul></div>
+  </div>
+
+  <div class="use-case">
+    <h4>Practical Use Case</h4>
+    <div class="industry">Biomedical · Research Assistant</div>
+    <p><strong>Problem:</strong> A research team needs synthesized answers from thousands of papers. "What are the latest treatments for glioblastoma with MGMT methylation?" requires multi-source, multi-step investigation.</p>
+    <p><strong>Solution:</strong> Agent decomposes into sub-queries (MGMT methylation mechanism, current clinical trials, treatment protocols), retrieves iteratively from PubMed, cross-checks findings, and synthesizes a cited summary.</p>
+<pre><span class="t-kw">from</span> <span class="t-var">langchain.agents</span> <span class="t-kw">import</span> <span class="t-fn">create_react_agent</span>
+
+<span class="t-var">tools</span> <span class="t-op">=</span> <span class="t-op">[</span><span class="t-var">pubmed_search</span><span class="t-op">,</span> <span class="t-var">clinical_trials_api</span><span class="t-op">,</span> <span class="t-var">vector_retriever</span><span class="t-op">]</span>
+<span class="t-var">agent</span> <span class="t-op">=</span> <span class="t-fn">create_react_agent</span><span class="t-op">(</span><span class="t-var">llm</span><span class="t-op">,</span> <span class="t-var">tools</span><span class="t-op">,</span> <span class="t-var">prompt</span><span class="t-op">)</span>
+
+<span class="t-cm"># Agent autonomously: plans → retrieves → reasons → verifies → answers</span>
+<span class="t-var">result</span> <span class="t-op">=</span> <span class="t-var">agent</span><span class="t-op">.</span><span class="t-fn">invoke</span><span class="t-op">({</span>
+    <span class="t-str">"input"</span><span class="t-op">:</span> <span class="t-str">"Latest treatments for glioblastoma with MGMT methylation?"</span>
+<span class="t-op">})</span>
+<span class="t-cm"># Thought: I need clinical trial data AND mechanism papers...</span>
+<span class="t-cm"># Action: pubmed_search("MGMT methylation glioblastoma treatment")</span>
+<span class="t-cm"># Observation: Found 12 relevant papers...</span></pre>
+  </div>
+
+  <div class="callout"><strong>When to use:</strong> Deploy Agentic RAG for open-ended research, complex analytical questions, or any task where a single retrieval pass is insufficient and the system must reason across multiple sources.</div>
+</article>
+
+<!-- ═══ GRAPH RAG ═══ -->
+<article class="rag-card observe" id="graph-rag" data-flow="graph">
+  <span class="rag-badge">Type 05</span>
+  <h2>Graph RAG</h2>
+  <p class="concept">Builds a knowledge graph from documents by extracting entities and relationships. Retrieval traverses the graph — following edges between connected concepts — rather than relying solely on vector similarity. Captures multi-hop reasoning paths that flat chunk retrieval misses.</p>
+
+  <p class="sub-label">Architecture Flow</p>
+  <div class="flow-diagram" data-flow-id="graph">
+    <svg viewBox="0 0 760 80" xmlns="http://www.w3.org/2000/svg">
+      <g class="flow-step" data-step="0"><rect class="flow-node" x="4" y="20" width="52" height="40" rx="6"/><text class="flow-label" x="30" y="45">Docs</text></g>
+      <line class="flow-arrow" data-arrow="0" x1="56" y1="40" x2="72" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="1"><rect class="flow-node" x="72" y="20" width="96" height="40" rx="6"/><text class="flow-label" x="120" y="45">Entity Extract</text></g>
+      <line class="flow-arrow" data-arrow="1" x1="168" y1="40" x2="184" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="2"><rect class="flow-node" x="184" y="20" width="96" height="40" rx="6"/><text class="flow-label" x="232" y="45">Knowledge Graph</text></g>
+      <line class="flow-arrow" data-arrow="2" x1="280" y1="40" x2="296" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="3"><rect class="flow-node" x="296" y="20" width="56" height="40" rx="6"/><text class="flow-label" x="324" y="45">Query</text></g>
+      <line class="flow-arrow" data-arrow="3" x1="352" y1="40" x2="368" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="4"><rect class="flow-node" x="368" y="20" width="96" height="40" rx="6"/><text class="flow-label" x="416" y="45">Graph Traverse</text></g>
+      <line class="flow-arrow" data-arrow="4" x1="464" y1="40" x2="480" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="5"><rect class="flow-node" x="480" y="20" width="72" height="40" rx="6"/><text class="flow-label" x="516" y="45">Subgraph</text></g>
+      <line class="flow-arrow" data-arrow="5" x1="552" y1="40" x2="568" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="6"><rect class="flow-node" x="568" y="20" width="64" height="40" rx="6"/><text class="flow-label" x="600" y="45">Prompt</text></g>
+      <line class="flow-arrow" data-arrow="6" x1="632" y1="40" x2="648" y2="40" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="7"><rect class="flow-node" x="648" y="20" width="52" height="40" rx="6"/><text class="flow-label" x="674" y="45">LLM</text></g>
+    </svg>
+  </div>
+
+  <p class="sub-label">How It Works</p>
+  <div class="stepper">
+    <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Entity &amp; Relation Extraction</h4><p>LLM or NER pipeline extracts entities (drugs, conditions, people) and relationships from documents into triples.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Knowledge Graph Construction</h4><p>Triples are stored in Neo4j, Neptune, or NetworkX as a queryable graph with typed nodes and edges.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Graph Traversal Retrieval</h4><p>Query entities are matched to graph nodes; relevant subgraphs are extracted via BFS, Cypher, or path ranking.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Subgraph → LLM Synthesis</h4><p>The retrieved subgraph (nodes + edges + source text) is serialized into the prompt for grounded generation.</p></div></div>
+  </div>
+
+  <p class="sub-label">Key Components</p>
+  <div class="components">
+    <div class="comp-card"><div class="comp-icon">🏷️</div><h4>Entity Extractor</h4><p>LLM-based or spaCy NER to pull entities and relations from unstructured text.</p></div>
+    <div class="comp-card"><div class="comp-icon">🕸️</div><h4>Graph Database</h4><p>Neo4j, Amazon Neptune, or FalkorDB for storing and querying entity graphs.</p></div>
+    <div class="comp-card"><div class="comp-icon">🔍</div><h4>Graph Retriever</h4><p>Cypher queries or community detection to extract relevant subgraphs.</p></div>
+    <div class="comp-card"><div class="comp-icon">📊</div><h4>Community Summaries</h4><p>Microsoft GraphRAG-style hierarchical summaries of graph communities.</p></div>
+  </div>
+
+  <p class="sub-label">Strengths &amp; Limitations</p>
+  <div class="pros-cons">
+    <div class="pros"><h4>Strengths</h4><ul><li>Excels at multi-hop relational reasoning</li><li>Captures explicit entity relationships</li><li>Great for interconnected domain knowledge</li><li>Enables "how are X and Y related?" queries</li></ul></div>
+    <div class="cons"><h4>Limitations</h4><ul><li>Expensive graph construction upfront</li><li>Entity extraction errors propagate</li><li>Graph maintenance as docs change</li><li>Less effective for unstructured narrative text</li></ul></div>
+  </div>
+
+  <div class="use-case">
+    <h4>Practical Use Case</h4>
+    <div class="industry">Healthcare · Drug Interaction Checker</div>
+    <p><strong>Problem:</strong> Clinicians need to know if Drug A can be combined with Drug B for a patient with renal failure — requiring traversal across drug→interaction→contraindication→condition relationships.</p>
+    <p><strong>Solution:</strong> Graph RAG traverses from Drug A and Drug B nodes through interaction edges, filters by renal failure contraindication nodes, and synthesizes a safety assessment.</p>
+<pre><span class="t-cm"># Neo4j Cypher: find interaction paths between two drugs</span>
+<span class="t-var">cypher</span> <span class="t-op">=</span> <span class="t-str">"""
+MATCH (a:Drug {name: $drug_a})-[r:INTERACTS_WITH]-(b:Drug {name: $drug_b})
+MATCH (a)-[:CONTRAINDICATED_FOR]->(c:Condition {name: 'renal failure'})
+RETURN a.name, r.severity, r.mechanism, c.name
+"""</span>
+<span class="t-var">subgraph</span> <span class="t-op">=</span> <span class="t-var">neo4j_driver</span><span class="t-op">.</span><span class="t-fn">execute</span><span class="t-op">(</span><span class="t-var">cypher</span><span class="t-op">,</span> <span class="t-var">drug_a</span><span class="t-op">=</span><span class="t-str">"Warfarin"</span><span class="t-op">,</span> <span class="t-var">drug_b</span><span class="t-op">=</span><span class="t-str">"Aspirin"</span><span class="t-op">)</span>
+<span class="t-var">answer</span> <span class="t-op">=</span> <span class="t-var">llm</span><span class="t-op">.</span><span class="t-fn">invoke</span><span class="t-op">(</span><span class="t-fn">format_subgraph</span><span class="t-op">(</span><span class="t-var">subgraph</span><span class="t-op">)</span> <span class="t-op">+</span> <span class="t-var">user_query</span><span class="t-op">)</span></pre>
+  </div>
+
+  <div class="callout"><strong>When to use:</strong> Choose Graph RAG when your data has rich entity relationships — biomedical ontologies, supply chains, org charts, fraud networks — and queries require traversing connections across documents.</div>
+</article>
+
+<!-- ═══ MULTIMODAL RAG ═══ -->
+<article class="rag-card observe" id="multimodal-rag" data-flow="multimodal">
+  <span class="rag-badge">Type 06</span>
+  <h2>Multimodal RAG</h2>
+  <p class="concept">Retrieves across text, images, tables, and charts using modality-specific embeddings (CLIP for images, text embedders for documents) stored in separate indexes. A cross-modal fusion step combines results before passing to a vision-capable LLM for generation.</p>
+
+  <p class="sub-label">Architecture Flow</p>
+  <div class="flow-diagram" data-flow-id="multimodal">
+    <svg viewBox="0 0 720 120" xmlns="http://www.w3.org/2000/svg">
+      <g class="flow-step" data-step="0"><rect class="flow-node" x="4" y="40" width="64" height="40" rx="6"/><text class="flow-label" x="36" y="65">Query</text></g>
+      <line class="flow-arrow" data-arrow="0" x1="68" y1="60" x2="88" y2="60" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="1"><rect class="flow-node" x="88" y="40" width="104" height="40" rx="6"/><text class="flow-label" x="140" y="65">Multimodal Embed</text></g>
+      <line class="flow-arrow" data-arrow="1" x1="140" y1="40" x2="220" y2="16" marker-end="url(#arr)"/>
+      <line class="flow-arrow" data-arrow="2" x1="140" y1="60" x2="220" y2="60" marker-end="url(#arr)"/>
+      <line class="flow-arrow" data-arrow="3" x1="140" y1="80" x2="220" y2="104" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="2"><rect class="flow-node" x="220" y="0" width="80" height="32" rx="6"/><text class="flow-label" x="260" y="20">Text Index</text></g>
+      <g class="flow-step" data-step="3"><rect class="flow-node" x="220" y="44" width="80" height="32" rx="6"/><text class="flow-label" x="260" y="64">Image Index</text></g>
+      <g class="flow-step" data-step="4"><rect class="flow-node" x="220" y="88" width="80" height="32" rx="6"/><text class="flow-label" x="260" y="108">Table Index</text></g>
+      <line class="flow-arrow" data-arrow="4" x1="300" y1="16" x2="360" y2="50" marker-end="url(#arr)"/>
+      <line class="flow-arrow" data-arrow="5" x1="300" y1="60" x2="360" y2="60" marker-end="url(#arr)"/>
+      <line class="flow-arrow" data-arrow="6" x1="300" y1="104" x2="360" y2="70" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="5"><rect class="flow-node" x="360" y="40" width="104" height="40" rx="6"/><text class="flow-label" x="412" y="65">Cross-modal Fusion</text></g>
+      <line class="flow-arrow" data-arrow="7" x1="464" y1="60" x2="484" y2="60" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="6"><rect class="flow-node" x="484" y="40" width="64" height="40" rx="6"/><text class="flow-label" x="516" y="65">Prompt</text></g>
+      <line class="flow-arrow" data-arrow="8" x1="548" y1="60" x2="568" y2="60" marker-end="url(#arr)"/>
+      <g class="flow-step" data-step="7"><rect class="flow-node" x="568" y="40" width="88" height="40" rx="6"/><text class="flow-label" x="612" y="65">Vision-LLM</text></g>
+    </svg>
+  </div>
+
+  <p class="sub-label">How It Works</p>
+  <div class="stepper">
+    <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Multimodal Indexing</h4><p>Text chunks, images, and tables are embedded with modality-appropriate models and stored in separate vector indexes.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Cross-Modal Query</h4><p>User query (text or image) is embedded and searched across all modality indexes — CLIP enables text→image retrieval.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Fusion &amp; Ranking</h4><p>Results from each index are fused and re-ranked by cross-modal relevance scores.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Vision-LLM Generation</h4><p>Retrieved images + text context are passed to GPT-4V or Gemini for multimodal answer synthesis.</p></div></div>
+  </div>
+
+  <p class="sub-label">Key Components</p>
+  <div class="components">
+    <div class="comp-card"><div class="comp-icon">🖼️</div><h4>CLIP Embedder</h4><p>Joint text-image embedding model for cross-modal similarity search.</p></div>
+    <div class="comp-card"><div class="comp-icon">📑</div><h4>Modality Indexes</h4><p>Separate vector stores per modality — text, image, table, chart.</p></div>
+    <div class="comp-card"><div class="comp-icon">🔀</div><h4>Cross-Modal Fusion</h4><p>Combines and ranks results across modalities into unified context.</p></div>
+    <div class="comp-card"><div class="comp-icon">👁️</div><h4>Vision-LLM</h4><p>GPT-4V, Gemini Pro Vision — generates answers from text + image inputs.</p></div>
+  </div>
+
+  <p class="sub-label">Strengths &amp; Limitations</p>
+  <div class="pros-cons">
+    <div class="pros"><h4>Strengths</h4><ul><li>Handles visual + textual knowledge together</li><li>Image-to-image and text-to-image retrieval</li><li>Essential for manuals with diagrams/charts</li><li>Enables visual defect and pattern matching</li></ul></div>
+    <div class="cons"><h4>Limitations</h4><ul><li>Multiple indexes to build and maintain</li><li>Vision-LLM calls are expensive</li><li>Cross-modal alignment is imperfect</li><li>Table/chart parsing remains brittle</li></ul></div>
+  </div>
+
+  <div class="use-case">
+    <h4>Practical Use Case</h4>
+    <div class="industry">Manufacturing · Defect Analysis</div>
+    <p><strong>Problem:</strong> An engineer uploads a photo of a cracked turbine component and needs similar past defects, relevant repair manual sections, and incident reports — spanning images and text.</p>
+    <p><strong>Solution:</strong> CLIP embeds the uploaded image, retrieves similar defect photos from the image index, pulls related manual text and incident reports, and GPT-4V synthesizes a repair recommendation.</p>
+<pre><span class="t-kw">from</span> <span class="t-var">transformers</span> <span class="t-kw">import</span> <span class="t-cls">CLIPModel</span><span class="t-op">,</span> <span class="t-cls">CLIPProcessor</span>
+
+<span class="t-cm"># Embed uploaded defect image with CLIP</span>
+<span class="t-var">image_emb</span> <span class="t-op">=</span> <span class="t-var">clip_model</span><span class="t-op">.</span><span class="t-fn">get_image_features</span><span class="t-op">(</span><span class="t-var">uploaded_image</span><span class="t-op">)</span>
+<span class="t-var">similar_images</span> <span class="t-op">=</span> <span class="t-var">image_index</span><span class="t-op">.</span><span class="t-fn">search</span><span class="t-op">(</span><span class="t-var">image_emb</span><span class="t-op">,</span> <span class="t-var">top_k</span><span class="t-op">=</span><span class="t-num">5</span><span class="t-op">)</span>
+<span class="t-var">manual_chunks</span> <span class="t-op">=</span> <span class="t-var">text_index</span><span class="t-op">.</span><span class="t-fn">search</span><span class="t-op">(</span><span class="t-str">"turbine crack repair procedure"</span><span class="t-op">,</span> <span class="t-var">top_k</span><span class="t-op">=</span><span class="t-num">3</span><span class="t-op">)</span>
+
+<span class="t-var">response</span> <span class="t-op">=</span> <span class="t-var">gpt4v</span><span class="t-op">.</span><span class="t-fn">invoke</span><span class="t-op">(</span>
+    <span class="t-var">images</span><span class="t-op">=[</span><span class="t-var">uploaded_image</span><span class="t-op">]</span> <span class="t-op">+</span> <span class="t-var">similar_images</span><span class="t-op">,</span>
+    <span class="t-var">text</span><span class="t-op">=</span><span class="t-fn">format_context</span><span class="t-op">(</span><span class="t-var">manual_chunks</span><span class="t-op">)</span>
+<span class="t-op">)</span></pre>
+  </div>
+
+  <div class="callout"><strong>When to use:</strong> Build Multimodal RAG when your knowledge base includes images, diagrams, charts, or tables alongside text — manufacturing, medical imaging, retail catalogs, or any visual inspection workflow.</div>
+</article>
+
+</main>
+
+<!-- ═══ COMPARISON TABLE ═══ -->
+<section class="compare-section" id="compare">
+  <div class="container">
+    <div class="section-header observe">
+      <h2>Architecture Comparison</h2>
+      <p>Side-by-side comparison of all six RAG variants across key production dimensions.</p>
+    </div>
+    <div class="table-wrap observe">
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Retrieval Method</th>
+            <th>Latency</th>
+            <th>Best For</th>
+            <th>Complexity</th>
+            <th>Example Tools</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Naive RAG</td>
+            <td>Vector similarity (cosine)</td>
+            <td>Low (~1–2s)</td>
+            <td>FAQ bots, doc search</td>
+            <td>★☆☆☆☆</td>
+            <td>LangChain, FAISS, Chroma</td>
+          </tr>
+          <tr>
+            <td>Advanced RAG</td>
+            <td>Hybrid + re-ranking</td>
+            <td>Medium (~3–5s)</td>
+            <td>Legal, medical Q&amp;A</td>
+            <td>★★★☆☆</td>
+            <td>Cohere Rerank, HyDE, BM25</td>
+          </tr>
+          <tr>
+            <td>Modular RAG</td>
+            <td>Router + multi-source</td>
+            <td>Medium (~2–6s)</td>
+            <td>Enterprise assistants</td>
+            <td>★★★★☆</td>
+            <td>LangGraph, LlamaIndex</td>
+          </tr>
+          <tr>
+            <td>Agentic RAG</td>
+            <td>Iterative tool-calling</td>
+            <td>High (~10–30s)</td>
+            <td>Research, analysis</td>
+            <td>★★★★★</td>
+            <td>ReAct, AutoGPT, CrewAI</td>
+          </tr>
+          <tr>
+            <td>Graph RAG</td>
+            <td>Graph traversal</td>
+            <td>Medium (~3–8s)</td>
+            <td>Relational knowledge</td>
+            <td>★★★★☆</td>
+            <td>Neo4j, Microsoft GraphRAG</td>
+          </tr>
+          <tr>
+            <td>Multimodal RAG</td>
+            <td>Cross-modal embedding</td>
+            <td>Medium–High (~5–15s)</td>
+            <td>Visual + text knowledge</td>
+            <td>★★★★☆</td>
+            <td>CLIP, GPT-4V, Gemini</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DECISION FLOW ═══ -->
+<section class="decision-section" id="decision">
+  <div class="container">
+    <div class="section-header observe">
+      <h2>Choosing Your RAG</h2>
+      <p>Tell us about your use case — domain, data, and priorities — and we'll recommend the best architecture.</p>
+    </div>
+    <div class="decision-box observe" id="decisionBox">
+      <div class="q-block" id="q1">
+        <h3>1. What domain are you building for?</h3>
+        <p class="q-hint">Select the industry or product context closest to your project.</p>
+        <div class="q-options">
+          <button class="q-btn" data-q="1" data-v="support">Customer Support &amp; FAQ<span>SaaS help docs, ticketing, chatbots</span></button>
+          <button class="q-btn" data-q="1" data-v="legal">Legal, Finance &amp; Compliance<span>Contracts, regulations, audit trails</span></button>
+          <button class="q-btn" data-q="1" data-v="research">Scientific &amp; Biomedical Research<span>Literature review, clinical data synthesis</span></button>
+          <button class="q-btn" data-q="1" data-v="enterprise">Enterprise Internal Knowledge<span>HR, IT, product docs across departments</span></button>
+          <button class="q-btn" data-q="1" data-v="healthcare">Healthcare &amp; Life Sciences<span>Drug interactions, clinical pathways</span></button>
+          <button class="q-btn" data-q="1" data-v="manufacturing">Manufacturing &amp; Engineering<span>Defect analysis, manuals with diagrams</span></button>
+        </div>
+      </div>
+      <div class="q-block" id="q2" style="display:none">
+        <h3>2. What does your knowledge base look like?</h3>
+        <p class="q-hint">Describe the shape and structure of the data you'll retrieve from.</p>
+        <div class="q-options">
+          <button class="q-btn" data-q="2" data-v="text-docs">Plain-text documents &amp; wikis<span>PDFs, Markdown, Confluence, Notion</span></button>
+          <button class="q-btn" data-q="2" data-v="precision-corpus">High-stakes text requiring citations<span>Legal clauses, policy docs, SOPs</span></button>
+          <button class="q-btn" data-q="2" data-v="multi-source">Multiple heterogeneous sources<span>SQL databases, APIs, web + internal docs</span></button>
+          <button class="q-btn" data-q="2" data-v="entity-graph">Entity-rich relational data<span>Drugs, people, orgs, supply chain links</span></button>
+          <button class="q-btn" data-q="2" data-v="multimodal">Mixed modalities<span>Images, charts, tables alongside text</span></button>
+        </div>
+      </div>
+      <div class="q-block" id="q3" style="display:none">
+        <h3>3. What is the top priority for your users?</h3>
+        <p class="q-hint">Pick the outcome that matters most in production.</p>
+        <div class="q-options">
+          <button class="q-btn" data-q="3" data-v="speed">Instant responses (&lt;2s)<span>Live chat, self-service support</span></button>
+          <button class="q-btn" data-q="3" data-v="precision">Maximum accuracy &amp; grounding<span>Zero tolerance for wrong citations</span></button>
+          <button class="q-btn" data-q="3" data-v="routing">Smart routing across backends<span>Right source for each query type</span></button>
+          <button class="q-btn" data-q="3" data-v="reasoning">Deep multi-step investigation<span>Open research, complex analysis</span></button>
+          <button class="q-btn" data-q="3" data-v="relationships">Multi-hop relational queries<span>"How does X relate to Y via Z?"</span></button>
+          <button class="q-btn" data-q="3" data-v="visual">Visual similarity &amp; cross-modal search<span>Match images to docs and past cases</span></button>
+        </div>
+      </div>
+      <div class="decision-result" id="decisionResult">
+        <h3 id="resultTitle"></h3>
+        <p id="resultBody"></p>
+        <p id="resultSecondary"></p>
+        <div class="result-tags" id="resultTags"></div>
+        <button class="decision-reset" id="decisionReset">Start Over</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p class="footer-copyright">© 2026 <a href="https://prateekdutta2001.github.io/PrateekDutta.in/" target="_blank" rel="noopener noreferrer">PRATEEK DUTTA</a>. This work is licensed under a Creative Commons Attribution 4.0 International License (CC BY 4.0).</p>
+</footer>
+
+<script src="script.js" defer></script>
+
+</body>
+</html>
